@@ -10,11 +10,13 @@ async function sortHackerNewsArticles() {
   // go to Hacker News
   await page.goto("https://news.ycombinator.com/newest");
 
-  const articles = await page.$$('tr.athing');
-  const articleData = [];
-  
-  for (const article of articles) {
-    
+  // MY CODE STARTS HERE
+
+  const articleLimit = 100;
+  let allArticles = [];
+
+  // function to extract article ID and timestamp
+  const extractData = async (article) => {
     const articleId = await article.getAttribute('id');
     const nextSibling = await article.evaluateHandle(node => node.nextElementSibling);
     const ageSpan = await nextSibling.$('span.age');
@@ -22,12 +24,30 @@ async function sortHackerNewsArticles() {
 
     timeStamp = timeStamp.split(' ')[1]; //grab the unix timestamp
 
-    articleData.push({ articleId, timeStamp });
     console.log({ articleId, timeStamp });
+    return { articleId, timeStamp }
   }
 
+  while (allArticles.length <= articleLimit) {
+    const articles = await page.$$('tr.athing');
+    for (const article of articles) {
+      await extractData(article).then(data => 
+          allArticles.push(data)
+      );
+      if (allArticles.length >= articleLimit) break;
+    }
+    if (allArticles.length >= articleLimit) break;
+    await page.locator('a.morelink').click();
+    await page.waitForLoadState('networkidle');
+  }
+
+  console.log(`Extracted ${allArticles.length} articles`);
+  console.log(allArticles[0]);
 
   await browser.close();
+  
+  
+  
 }
 
 (async () => {
