@@ -1,5 +1,5 @@
 // EDIT THIS FILE TO COMPLETE ASSIGNMENT QUESTION 1
-const { selectors, chromium } = require("playwright");
+const { chromium } = require("playwright");
 
 async function sortHackerNewsArticles() {
   // launch browser
@@ -10,8 +10,9 @@ async function sortHackerNewsArticles() {
   // go to Hacker News
   await page.goto("https://news.ycombinator.com/newest");
 
-  // MY CODE STARTS HERE
+// *** MY CODE STARTS HERE ***
 
+  // Set the limit of articles to extract
   const articleLimit = 100;
   let allArticles = [];
 
@@ -22,12 +23,28 @@ async function sortHackerNewsArticles() {
     const ageSpan = await nextSibling.$('span.age');
     let timeStamp = await ageSpan.getAttribute('title');
 
-    timeStamp = timeStamp.split(' ')[1]; //grab the unix timestamp
+    // grab the unix timestamp for easier calculation, not the datetime string
+    timeStamp = timeStamp.split(' ')[1]; 
 
-    console.log({ articleId, timeStamp });
+    // console.log({ articleId, timeStamp });
     return { articleId, timeStamp }
   }
 
+  // function to validate timestamp
+  const validateTimestampOrder = (articles) => {
+    currentTimestamp = parseInt(articles[0].timeStamp);
+    for (const article of articles) {
+      article.timeStamp = parseInt(article.timeStamp);
+      if (article.timeStamp > currentTimestamp) {
+        console.error(`Timestamp order incorrect: ${article.timeStamp} is greater than ${currentTimestamp}`);
+        return false;
+      }
+      currentTimestamp = article.timeStamp;
+    }
+    return true;
+  }
+
+  // Driver code
   while (allArticles.length <= articleLimit) {
     const articles = await page.$$('tr.athing');
     for (const article of articles) {
@@ -42,12 +59,9 @@ async function sortHackerNewsArticles() {
   }
 
   console.log(`Extracted ${allArticles.length} articles`);
-  console.log(allArticles[0]);
+  console.log(validateTimestampOrder(allArticles) ? 'Timestamps are in order, newest to oldest' : 'Timestamps are NOT in correct order');
 
   await browser.close();
-  
-  
-  
 }
 
 (async () => {
