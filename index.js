@@ -31,8 +31,8 @@ async function sortHackerNewsArticles() {
   }
 
   // function to validate timestamp
-  const validateTimestampOrder = (articles) => {
-    currentTimestamp = parseInt(articles[0].timeStamp);
+  const validateTimeStampOrder = (articles) => {
+    let currentTimestamp = parseInt(articles[0].timeStamp);
     for (const article of articles) {
       article.timeStamp = parseInt(article.timeStamp);
       if (article.timeStamp > currentTimestamp) {
@@ -45,7 +45,7 @@ async function sortHackerNewsArticles() {
   }
 
   // Driver code
-  while (allArticles.length <= articleLimit) {
+  while (allArticles.length < articleLimit) {
     const articles = await page.$$('tr.athing');
     for (const article of articles) {
       await extractData(article).then(data => 
@@ -53,13 +53,16 @@ async function sortHackerNewsArticles() {
       );
       if (allArticles.length >= articleLimit) break;
     }
-    if (allArticles.length >= articleLimit) break;
-    await page.locator('a.morelink').click();
-    await page.waitForLoadState('networkidle');
+    if (allArticles.length < articleLimit) {
+      await page.locator('a.morelink').click();
+      await page.waitForLoadState('networkidle');
+    }
   }
 
-  console.log(`Extracted ${allArticles.length} articles`);
-  console.log(validateTimestampOrder(allArticles) ? 'Timestamps are in order, newest to oldest' : 'Timestamps are NOT in correct order');
+  const isValid = validateTimeStampOrder(allArticles);
+
+  console.log(`Extracted ${allArticles.length} articles from Hacker News`);
+  console.log(isValid ? 'Timestamps are in order, newest to oldest' : 'Timestamps are NOT in correct order');
 
   await browser.close();
 }
